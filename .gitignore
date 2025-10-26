@@ -1,0 +1,110 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyc
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# AWS
+*.pem
+*.key
+credentials
+
+# Lambda Packages
+*.zip
+lambdas/**/package/
+lambdas/**/.terraform/
+
+# Lambda dependencies (installed via pip install -t .)
+lambdas/**/boto3/
+lambdas/**/boto3-*
+lambdas/**/botocore/
+lambdas/**/botocore-*
+lambdas/**/urllib3/
+lambdas/**/urllib3-*
+lambdas/**/certifi/
+lambdas/**/certifi-*
+lambdas/**/charset_normalizer/
+lambdas/**/charset_normalizer-*
+lambdas/**/idna/
+lambdas/**/idna-*
+lambdas/**/requests/
+lambdas/**/requests-*
+lambdas/**/s3transfer/
+lambdas/**/s3transfer-*
+lambdas/**/jmespath/
+lambdas/**/jmespath-*
+lambdas/**/dateutil/
+lambdas/**/python_dateutil-*
+lambdas/**/six.py
+lambdas/**/six-*
+lambdas/**/*.dist-info/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+
+# Project Specific
+response.json
+test-event.json

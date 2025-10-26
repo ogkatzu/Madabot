@@ -1,0 +1,73 @@
+# Example Terraform Variables
+# Copy this file to terraform.tfvars and fill in your values
+# Usage: cp terraform.tfvars.example terraform.tfvars
+
+# Core Configuration
+environment  = "dev"
+aws_region   = "us-east-1"
+project_name = "mcp-first-responder"
+owner_email  = "your-email@example.com"
+
+# AI Provider Selection
+ai_provider = "google"  # Options: "anthropic" (Claude) or "google" (Gemini)
+
+# Required Secrets (NEVER commit actual values)
+# Set these via environment variables or pass via CLI:
+# For Anthropic Claude:
+# export TF_VAR_anthropic_api_key="sk-ant-api03-..."
+# For Google Gemini:
+# export TF_VAR_google_api_key="YOUR_GOOGLE_API_KEY"
+# For Slack:
+# export TF_VAR_slack_webhook_url="https://hooks.slack.com/services/..."
+
+anthropic_api_key = ""  # Set via TF_VAR_anthropic_api_key (if using Anthropic)
+google_api_key    = ""  # Set via TF_VAR_google_api_key (if using Google)
+slack_webhook_url = ""  # Set via TF_VAR_slack_webhook_url
+
+# Jira Integration (Optional)
+jira_enabled      = false
+jira_url          = "https://your-domain.atlassian.net"
+jira_api_token    = ""  # Set via TF_VAR_jira_api_token
+jira_project_key  = "INC"
+
+# Email Integration (Optional)
+email_enabled       = false
+email_from_address  = "alerts@example.com"
+email_to_addresses  = "oncall@example.com,team@example.com"
+
+# Lambda Configuration
+lambda_runtime             = "python3.11"
+ingestor_memory_size       = 512
+ingestor_timeout           = 300
+analyzer_memory_size       = 1024
+analyzer_timeout           = 900
+notifier_memory_size       = 512
+notifier_timeout           = 300
+
+# SQS Configuration
+processing_queue_visibility_timeout    = 900
+processing_queue_max_receive_count     = 3
+distribution_queue_visibility_timeout  = 300
+distribution_queue_max_receive_count   = 3
+dlq_retention_period                   = 1209600  # 14 days
+
+# DynamoDB Configuration
+dynamodb_billing_mode = "PAY_PER_REQUEST"
+cache_ttl_hours       = 24
+
+# EventBridge Configuration
+eventbridge_rule_state = "ENABLED"
+cloudwatch_log_group_patterns = [
+  "/aws/lambda/*"
+]
+
+# Monitoring
+enable_cloudwatch_alarms      = true
+dlq_alarm_threshold           = 1
+lambda_error_rate_threshold   = 5
+
+# Additional Tags
+additional_tags = {
+  CostCenter = "Engineering"
+  Terraform  = "true"
+}
