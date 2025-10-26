@@ -1,0 +1,308 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudWatch Integration for MCP Incident Response System
+
+Parameters:
+  WebhookUrl:
+    Type: String
+    Description: MCP Incident Responder webhook URL
+  
+  ApiKey:
+    Type: String
+    Description: API Gateway API key for webhook
+    NoEcho: true
+  
+  AlertEmail:
+    Type: String
+    Description: Email address for critical alerts
+    Default: ""
+
+Resources:
+  # SNS Topic for CloudWatch Alarms
+  IncidentAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: mcp-incident-alerts
+      DisplayName: MCP Incident Response Alerts
+      Subscription:
+        - Endpoint: !Ref WebhookUrl
+          Protocol: https
+
+  # SNS Topic Policy
+  IncidentAlertsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref IncidentAlertsTopic
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudwatch.amazonaws.com
+                - events.amazonaws.com
+                - logs.amazonaws.com
+            Action:
+              - SNS:Publish
+            Resource: !Ref IncidentAlertsTopic
+
+  # Lambda Log Subscription Function
+  LogSubscriptionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: mcp-log-to-webhook
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt LogSubscriptionRole.Arn
+      Timeout: 60
+      Environment:
+        Variables:
+          WEBHOOK_URL: !Ref WebhookUrl
+          API_KEY: !Ref ApiKey
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import base64
+          import gzip
+          import urllib3
+
+          http = urllib3.PoolManager()
+
+          WEBHOOK_URL = os.environ['WEBHOOK_URL']
+          API_KEY = os.environ['API_KEY']
+
+          def handler(event, context):
+              # Decode and decompress CloudWatch Logs data
+              compressed_payload = base64.b64decode(event['awslogs']['data'])
+              uncompressed_payload = gzip.decompress(compressed_payload)
+              log_data = json.loads(uncompressed_payload)
+              
+              # Extract error events
+              error_events = []
+              for log_event in log_data['logEvents']:
+                  message = log_event['message']
+                  if any(keyword in message.lower() for keyword in ['error', 'exception', 'fatal', 'critical']):
+                      error_events.append(log_event)
+              
+              if not error_events:
+                  return {'statusCode': 200, 'body': 'No errors found'}
+              
+              # Format alert payload
+              alert = {
+                  'source': 'cloudwatch_logs',
+                  'title': f"Error detected in {log_data['logGroup']}",
+                  'message': '\n'.join([e['message'] for e in error_events[:5]]),
+                  'severity': 'HIGH',
+                  'timestamp': log_data['logEvents'][0]['timestamp'],
+                  'logGroup': log_data['logGroup'],
+                  'logStream': log_data['logStream']
+              }
+              
+              # Send to webhook
+              response = http.request(
+                  'POST',
+                  WEBHOOK_URL,
+                  body=json.dumps(alert).encode('utf-8'),
+                  headers={
+                      'Content-Type': 'application/json',
+                      'x-api-key': API_KEY
+                  }
+              )
+              
+              return {
+                  'statusCode': response.status,
+                  'body': json.dumps({'message': 'Alert sent'})
+              }
+
+  LogSubscriptionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LogSubscriptionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LogSubscriptionFunction
+      Action: lambda:InvokeFunction
+      Principal: logs.amazonaws.com
+      SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+
+  # EventBridge Rule for EC2 State Changes
+  EC2StateChangeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: mcp-ec2-state-change
+      Description: Alert on EC2 instance state changes
+      EventPattern:
+        source:
+          - aws.ec2
+        detail-type:
+          - EC2 Instance State-change Notification
+        detail:
+          state:
+            - stopped
+            - terminated
+            - stopping
+      State: ENABLED
+      Targets:
+        - Arn: !Ref IncidentAlertsTopic
+          Id: SNSTopic
+
+  # EventBridge Rule for RDS Events
+  RDSEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: mcp-rds-events
+      Description: Alert on RDS database events
+      EventPattern:
+        source:
+          - aws.rds
+        detail-type:
+          - RDS DB Instance Event
+          - RDS DB Cluster Event
+      State: ENABLED
+      Targets:
+        - Arn: !Ref IncidentAlertsTopic
+          Id: SNSTopic
+
+  # Sample CloudWatch Alarm - High CPU
+  SampleHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: mcp-sample-high-cpu
+      AlarmDescription: Sample alarm for high CPU usage
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref IncidentAlertsTopic
+      TreatMissingData: notBreaching
+
+  # Sample CloudWatch Alarm - High Error Rate
+  SampleHighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: mcp-sample-high-error-rate
+      AlarmDescription: Sample alarm for high error rate in Lambda
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref IncidentAlertsTopic
+      TreatMissingData: notBreaching
+
+  # CloudWatch Dashboard
+  IncidentDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: mcp-incident-response
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  ["AWS/SNS", "NumberOfMessagesPublished", {"stat": "Sum", "label": "Alerts Triggered"}]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Alert Volume",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", {"stat": "Sum"}],
+                  [".", "Errors", {"stat": "Sum"}],
+                  [".", "Throttles", {"stat": "Sum"}]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "System Health"
+              }
+            },
+            {
+              "type": "log",
+              "properties": {
+                "query": "SOURCE '/aws/lambda/mcp-log-to-webhook'\n| fields @timestamp, @message\n| filter @message like /Alert sent/\n| stats count() by bin(5m)",
+                "region": "${AWS::Region}",
+                "title": "Alerts Sent",
+                "stacked": false
+              }
+            }
+          ]
+        }
+
+  # Composite Alarm for Critical System Issues
+  CriticalSystemAlarm:
+    Type: AWS::CloudWatch::CompositeAlarm
+    Properties:
+      AlarmName: mcp-critical-system-issue
+      AlarmDescription: Critical issue detected - multiple alarms triggered
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref IncidentAlertsTopic
+      AlarmRule: !Sub |
+        ALARM(${SampleHighCPUAlarm}) OR
+        ALARM(${SampleHighErrorRateAlarm})
+
+Outputs:
+  SNSTopicArn:
+    Description: SNS Topic ARN for CloudWatch alarms
+    Value: !Ref IncidentAlertsTopic
+    Export:
+      Name: MCPIncidentAlertsTopic
+  
+  LogSubscriptionFunctionArn:
+    Description: Lambda function ARN for log subscriptions
+    Value: !GetAtt LogSubscriptionFunction.Arn
+    Export:
+      Name: MCPLogSubscriptionFunction
+  
+  DashboardURL:
+    Description: CloudWatch Dashboard URL
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${IncidentDashboard}'
+  
+  SetupInstructions:
+    Description: Next steps to complete integration
+    Value: |
+      1. For existing Lambda functions, add log subscription:
+         aws logs put-subscription-filter \
+           --log-group-name /aws/lambda/YOUR-FUNCTION \
+           --filter-name mcp-error-filter \
+           --filter-pattern "?ERROR ?Exception ?CRITICAL" \
+           --destination-arn <LogSubscriptionFunctionArn>
+      
+      2. For existing CloudWatch alarms, add SNS action:
+         aws cloudwatch put-metric-alarm \
+           --alarm-name YOUR-ALARM \
+           --alarm-actions <SNSTopicArn>
+      
+      3. View the dashboard at the URL above
+      
+      4. Test the integration by triggering a sample alarm

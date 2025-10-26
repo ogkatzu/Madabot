@@ -1,0 +1,3 @@
+{
+  "body": "{\"AlarmName\":\"HighErrorRate\",\"AlarmDescription\":\"Error rate exceeded 5% threshold\",\"AWSAccountId\":\"123456789012\",\"NewStateValue\":\"ALARM\",\"NewStateReason\":\"Threshold Crossed: 1 datapoint [8.5] was greater than the threshold (5.0).\",\"StateChangeTime\":\"2025-10-22T10:30:00.000Z\",\"Region\":\"us-east-1\",\"OldStateValue\":\"OK\",\"Trigger\":{\"MetricName\":\"ErrorRate\",\"Namespace\":\"AWS/ApplicationELB\",\"StatisticType\":\"Statistic\",\"Statistic\":\"AVERAGE\",\"Unit\":\"Percent\",\"Dimensions\":[{\"name\":\"LoadBalancer\",\"value\":\"app/my-load-balancer/50dc6c495c0c9188\"}],\"Period\":300,\"EvaluationPeriods\":1,\"ComparisonOperator\":\"GreaterThanThreshold\",\"Threshold\":5.0}}"
+}

@@ -1,0 +1,220 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: MCP Intelligent Incident Response System
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  SlackWebhookUrl:
+    Type: String
+    Description: Slack webhook URL for notifications
+    NoEcho: true
+
+  AnthropicApiKey:
+    Type: String
+    Description: Anthropic API key for Claude
+    NoEcho: true
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+    Runtime: python3.12
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        ALERTS_TABLE: !Ref AlertsTable
+        ANALYSIS_CACHE_TABLE: !Ref AnalysisCacheTable
+
+Resources:
+  # API Gateway for webhook ingestion
+  AlertWebhookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Auth:
+        ApiKeyRequired: true
+      Cors:
+        AllowMethods: '''POST'''
+        AllowHeaders: '''*'''
+        AllowOrigin: '''*'''
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub ${Environment}-alert-webhook-key
+      Enabled: true
+
+  # Alert Reception Function
+  AlertReceptionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/reception/
+      Handler: handler.receive_alert
+      Events:
+        WebhookPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AlertWebhookApi
+            Path: /alert
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+      Environment:
+        Variables:
+          PROCESSING_QUEUE_URL: !Ref ProcessingQueue
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ProcessingQueue.QueueName
+
+  # Processing Queue
+  ProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-alert-processing-queue
+      VisibilityTimeout: 900
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-alert-dlq
+      MessageRetentionPeriod: 1209600
+
+  # Analysis Engine Function
+  AnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/analysis/
+      Handler: handler.analyze_alert
+      Timeout: 900
+      MemorySize: 1024
+      Events:
+        QueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ProcessingQueue.Arn
+            BatchSize: 1
+      Environment:
+        Variables:
+          ANTHROPIC_API_KEY: !Ref AnthropicApiKey
+          DISTRIBUTION_QUEUE_URL: !Ref DistributionQueue
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AlertsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisCacheTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt DistributionQueue.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:FilterLogEvents
+                - logs:GetLogEvents
+              Resource: '*'
+
+  # Distribution Queue
+  DistributionQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${Environment}-distribution-queue
+      VisibilityTimeout: 300
+
+  # Distribution Function
+  DistributionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/distribution/
+      Handler: handler.distribute_report
+      Events:
+        QueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DistributionQueue.Arn
+            BatchSize: 1
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AlertsTable
+
+  # DynamoDB Tables
+  AlertsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Environment}-alerts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: alert_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: 'N'
+        - AttributeName: severity
+          AttributeType: S
+      KeySchema:
+        - AttributeName: alert_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp-index
+          KeySchema:
+            - AttributeName: severity
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  AnalysisCacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Environment}-analysis-cache
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: error_signature
+          AttributeType: S
+      KeySchema:
+        - AttributeName: error_signature
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # CloudWatch Alarms
+  DLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Environment}-alert-dlq-alarm
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeadLetterQueue.QueueName
+
+Outputs:
+  WebhookUrl:
+    Description: Alert webhook endpoint URL
+    Value: !Sub https://${AlertWebhookApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/alert
+
+  ApiKeyId:
+    Description: API Key ID for webhook authentication
+    Value: !Ref ApiKey
+
+  AlertsTableName:
+    Description: DynamoDB table for alert storage
+    Value: !Ref AlertsTable
