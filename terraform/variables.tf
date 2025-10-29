@@ -51,11 +51,8 @@ variable "google_api_key" {
   default     = ""
 }
 
-variable "slack_webhook_url" {
-  description = "Slack webhook URL for notifications (stored in SSM Parameter Store)"
-  type        = string
-  sensitive   = true
-}
+# Slack webhook is now stored in AWS Secrets Manager (saar-katz-slack-webhook)
+# No variable needed - Terraform references the existing secret
 
 variable "jira_enabled" {
   description = "Enable Jira integration"
@@ -202,6 +199,25 @@ variable "cloudwatch_log_group_patterns" {
   description = "List of CloudWatch log group patterns to monitor"
   type        = list(string)
   default     = ["/aws/lambda/*"]
+}
+
+# CloudWatch Logs Subscription Filter Configuration
+variable "enable_test_app_monitoring" {
+  description = "Enable monitoring for test application log group"
+  type        = bool
+  default     = true
+}
+
+variable "enable_lambda_monitoring" {
+  description = "Enable monitoring for Lambda function log groups"
+  type        = bool
+  default     = false
+}
+
+variable "monitored_lambda_patterns" {
+  description = "List of Lambda log groups to monitor for errors"
+  type        = list(string)
+  default     = []
 }
 
 # Monitoring Configuration

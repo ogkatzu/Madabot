@@ -37,13 +37,13 @@ resource "aws_ssm_parameter" "google_api_key" {
   tags = local.common_tags
 }
 
-resource "aws_ssm_parameter" "slack_webhook_url" {
-  name        = "/${var.project_name}/${var.environment}/slack-webhook-url"
-  description = "Slack webhook URL for notifications"
-  type        = "SecureString"
-  value       = var.slack_webhook_url
+# Reference existing Secrets Manager secret for Slack webhook
+data "aws_secretsmanager_secret" "slack_webhook" {
+  name = "saar-katz-slack-webhook"
+}
 
-  tags = local.common_tags
+data "aws_secretsmanager_secret_version" "slack_webhook" {
+  secret_id = data.aws_secretsmanager_secret.slack_webhook.id
 }
 
 resource "aws_ssm_parameter" "jira_api_token" {
@@ -304,11 +304,10 @@ module "iam_notifier" {
           {
             Effect = "Allow"
             Action = [
-              "ssm:GetParameter",
-              "ssm:GetParameters"
+              "secretsmanager:GetSecretValue"
             ]
             Resource = [
-              aws_ssm_parameter.slack_webhook_url.arn
+              data.aws_secretsmanager_secret.slack_webhook.arn
             ]
           },
           {
@@ -409,9 +408,9 @@ module "lambda_slack_notifier" {
   timeout     = var.notifier_timeout
 
   environment_variables = {
-    ENVIRONMENT             = var.environment
-    ALERTS_TABLE            = module.dynamodb_alerts.table_name
-    SLACK_WEBHOOK_URL_PARAM = aws_ssm_parameter.slack_webhook_url.name
+    ENVIRONMENT           = var.environment
+    ALERTS_TABLE          = module.dynamodb_alerts.table_name
+    SLACK_WEBHOOK_SECRET  = data.aws_secretsmanager_secret.slack_webhook.name
   }
 
   tags = local.common_tags

@@ -4,16 +4,20 @@ import boto3
 import urllib3
 
 http = urllib3.PoolManager()
-ssm = boto3.client('ssm')
+secrets_client = boto3.client('secretsmanager')
 
 def lambda_handler(event, context):
     """Basic Slack notifier"""
     print(f"Event: {json.dumps(event)}")
 
-    # Get Slack webhook from SSM
-    webhook_param = os.environ['SLACK_WEBHOOK_URL_PARAM']
-    response = ssm.get_parameter(Name=webhook_param, WithDecryption=True)
-    webhook_url = response['Parameter']['Value']
+    # Get Slack webhook from Secrets Manager
+    secret_name = os.environ['SLACK_WEBHOOK_SECRET']
+    response = secrets_client.get_secret_value(SecretId=secret_name)
+    secret_string = response['SecretString']
+
+    # Parse JSON secret (format: {"saar_slack_webhook": "https://..."})
+    secret_data = json.loads(secret_string)
+    webhook_url = secret_data['saar_slack_webhook']
 
     # Parse message
     for record in event.get('Records', []):
