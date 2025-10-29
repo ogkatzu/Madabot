@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP First-Responder | AI-Powered Incident Response</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="static/ambulance.png" alt="MCP First-Responder" class="logo-icon">
+                    <span class="logo-text">MCP First-Responder</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#architecture">Architecture</a>
+                    <a href="#demo">Demo</a>
+                    <a href="https://github.com/ogkatzu/Madabot" class="btn-secondary">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">Powered by Claude AI</div>
+                <h1 class="hero-title">
+                    Intelligent Incident Response
+                    <span class="gradient-text">Powered by AI</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Transform CloudWatch alerts into actionable insights. Automatically analyze, diagnose, and distribute incident reports to Slack, Jira, and email with AI-powered root cause analysis.
+                </p>
+                <div class="hero-cta">
+                    <a href="#demo" class="btn-primary">See It In Action</a>
+                    <a href="#how-it-works" class="btn-outline">Learn More</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">&lt;60s</div>
+                        <div class="stat-label">Alert to Analysis</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">80%</div>
+                        <div class="stat-label">Cost Reduction</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Automated Response</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="alert-flow">
+                <div class="flow-node alert-node">
+                    <span class="node-icon">⚠️</span>
+                    <span class="node-label">CloudWatch Alert</span>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node ai-node">
+                    <span class="node-icon">🤖</span>
+                    <span class="node-label">AI Analysis</span>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node notification-node">
+                    <span class="node-icon">📢</span>
+                    <span class="node-label">Smart Notifications</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why MCP First-Responder?</h2>
+                <p>Stop drowning in alerts. Start acting on intelligence.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <img src="static/brain.png" alt="AI-Powered Analysis" class="feature-icon">
+                    <h3>AI-Powered Analysis</h3>
+                    <p>Claude AI analyzes logs, traces, and infrastructure state to determine root cause and impact within seconds.</p>
+                </div>
+                <div class="feature-card">
+                    <img src="static/context.png" alt="Context-Aware" class="feature-icon">
+                    <h3>Context-Aware</h3>
+                    <p>Automatically gathers CloudWatch logs, deployment history, infrastructure health, and historical patterns.</p>
+                </div>
+                <div class="feature-card">
+                    <img src="static/dollar.png" alt="Cost Optimized" class="feature-icon">
+                    <h3>Cost Optimized</h3>
+                    <p>Intelligent caching reduces API costs by 80%. Run 100 alerts/day for ~$58/month.</p>
+                </div>
+                <div class="feature-card">
+                    <img src="static/lambda.png" alt="Serverless Architecture" class="feature-icon">
+                    <h3>Serverless Architecture</h3>
+                    <p>Event-driven design using Lambda, EventBridge, SQS, and DynamoDB. Zero infrastructure to manage.</p>
+                </div>
+                <div class="feature-card">
+                    <img src="static/notification.png" alt="Multi-Channel Distribution" class="feature-icon">
+                    <h3>Multi-Channel Distribution</h3>
+                    <p>Rich Slack notifications with Block Kit, automatic Jira tickets, and formatted email alerts.</p>
+                </div>
+                <div class="feature-card">
+                    <img src="static/shield.png" alt="Production Ready" class="feature-icon">
+                    <h3>Production Ready</h3>
+                    <p>Circuit breakers, DLQ monitoring, retry logic, and graceful degradation built-in.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2>How It Works</h2>
+                <p>Three-stage intelligent pipeline</p>
+            </div>
+            <div class="pipeline">
+                <div class="pipeline-stage">
+                    <div class="stage-number">1</div>
+                    <div class="stage-content">
+                        <h3>Ingest & Normalize</h3>
+                        <p>Receives alerts from CloudWatch, SNS, and custom webhooks. Enriches with AWS metadata and normalizes format.</p>
+                        <div class="stage-tech">
+                            <span class="tech-badge">EventBridge</span>
+                            <span class="tech-badge">Lambda</span>
+                            <span class="tech-badge">SQS FIFO</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-number">2</div>
+                    <div class="stage-content">
+                        <h3>Analyze & Diagnose</h3>
+                        <p>Gathers comprehensive context and sends to Claude AI for root cause analysis, severity assessment, and remediation recommendations.</p>
+                        <div class="stage-tech">
+                            <span class="tech-badge">Claude AI</span>
+                            <span class="tech-badge">DynamoDB</span>
+                            <span class="tech-badge">CloudWatch</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-number">3</div>
+                    <div class="stage-content">
+                        <h3>Distribute & Act</h3>
+                        <p>Sends formatted notifications to Slack with interactive buttons, creates Jira tickets, and emails stakeholders.</p>
+                        <div class="stage-tech">
+                            <span class="tech-badge">Slack API</span>
+                            <span class="tech-badge">Jira API</span>
+                            <span class="tech-badge">SES</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Diagram Section -->
+    <section id="architecture" class="architecture">
+        <div class="container">
+            <div class="section-header">
+                <h2>Architecture</h2>
+                <p>Event-driven serverless design</p>
+            </div>
+            <div class="architecture-diagram">
+                <div class="arch-layer">
+                    <div class="arch-label">Sources</div>
+                    <div class="arch-components">
+                        <div class="arch-box">CloudWatch Logs</div>
+                        <div class="arch-box">CloudWatch Alarms</div>
+                        <div class="arch-box">SNS Topics</div>
+                    </div>
+                </div>
+                <div class="arch-arrow-down">↓</div>
+                <div class="arch-layer">
+                    <div class="arch-label">Ingestion</div>
+                    <div class="arch-components">
+                        <div class="arch-box highlight">EventBridge</div>
+                        <div class="arch-box highlight">Ingestor Lambda</div>
+                        <div class="arch-box highlight">SQS FIFO</div>
+                    </div>
+                </div>
+                <div class="arch-arrow-down">↓</div>
+                <div class="arch-layer">
+                    <div class="arch-label">Analysis</div>
+                    <div class="arch-components">
+                        <div class="arch-box ai-highlight">Analyzer Lambda</div>
+                        <div class="arch-box ai-highlight">Claude API</div>
+                        <div class="arch-box ai-highlight">DynamoDB Cache</div>
+                    </div>
+                </div>
+                <div class="arch-arrow-down">↓</div>
+                <div class="arch-layer">
+                    <div class="arch-label">Distribution</div>
+                    <div class="arch-components">
+                        <div class="arch-box">Slack Notifier</div>
+                        <div class="arch-box">Jira Notifier</div>
+                        <div class="arch-box">Email Notifier</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2>See It In Action</h2>
+                <p>Watch a simulated incident flow from alert to resolution</p>
+            </div>
+            <div class="demo-container">
+                <div class="demo-controls">
+                    <button id="triggerDemo" class="btn-primary">Trigger Demo Alert</button>
+                    <button id="resetDemo" class="btn-outline">Reset</button>
+                </div>
+                <div class="demo-timeline">
+                    <div class="timeline-item" data-step="1">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Alert Detected</h4>
+                            <p>Database connection timeout in production</p>
+                            <div class="timeline-code">
+                                ERROR: Connection to RDS instance timed out after 30s
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-item" data-step="2">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Context Gathering</h4>
+                            <p>Fetching logs, infrastructure state, and deployment history</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item" data-step="3">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>AI Analysis</h4>
+                            <p>Claude identifies root cause and recommends actions</p>
+                            <div class="analysis-result">
+                                <strong>Root Cause:</strong> Recent deployment increased connection pool usage. RDS instance at max connections (100/100).<br>
+                                <strong>Recommended Action:</strong> Scale RDS instance or optimize connection pooling.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-item" data-step="4">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h4>Notifications Sent</h4>
+                            <p>Slack message delivered, Jira ticket created, emails sent</p>
+                            <div class="notification-preview">
+                                <div class="slack-preview">
+                                    <strong>🚨 CRITICAL: Database Connection Timeout</strong><br>
+                                    <span class="slack-detail">Analyzed in 45 seconds</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to Transform Your Incident Response?</h2>
+                <p>Deploy in minutes with Terraform. Open source and fully customizable.</p>
+                <div class="cta-buttons">
+                    <a href="https://github.com/yourusername/mcp-first-responder" class="btn-primary">View on GitHub</a>
+                    <a href="#" class="btn-outline">Read Documentation</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="static/ambulance.png" alt="MCP First-Responder" class="logo-icon">
+                    <span class="logo-text">MCP First-Responder</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/yourusername/mcp-first-responder">GitHub</a>
+                    <a href="#">Documentation</a>
+                    <a href="#">License</a>
+                </div>
+                <div class="footer-credit">
+                    Built with Claude AI • Hackathon Project 2025
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
